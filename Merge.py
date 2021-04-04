@@ -20,12 +20,15 @@ def blockdefinition():
     for blockentry in blockentries.iterdir():
             ALLBLOCKFILE.append(blockentry.name)
     blockMerge(ALLBLOCKFILE,BLOCKSTOMERGE,BLOCKPATH,spimi_index)
+    compression()
 
 def blockMerge(ALLBLOCKFILE,BLOCKSTOMERGE,BLOCKPATH,spimi_index):
     print("=============== Merging SPIMI blocks into final inverted index... ===============")
     tracemalloc.start()
     Filewrite = open('Merge/invert_index.txt',"w+")
     iterlist = [] 
+    term=""
+    current_term = ""
     startmerge = time.process_time()
     for BLOCKFILE in ALLBLOCKFILE:
         print("File Name:",BLOCKFILE)
@@ -61,23 +64,69 @@ def blockMerge(ALLBLOCKFILE,BLOCKSTOMERGE,BLOCKPATH,spimi_index):
                 finaldict[ksplit[0]] = str(postlingvalold)
             else:
                 #print(ksplit[1])
+                current_term = ksplit[0]
+                #_term_lenth = len(term)
+                #_index_of_current_term = len(term)
+                #(' _term_lenth', _term_lenth)
+                term=term+current_term.capitalize()
                 finaldict[ksplit[0]] = ksplit[1]   
         
         sorted(finaldict)
         
         
         Filewrite = open('Merge/invert_index.txt',"w+")
+        Filewrite1 = open('Merge/invert_actual_index.txt',"w+")
+        indexwriter1 = open('Merge/index_cp_1.txt',"w+")
+        indexwriter1.write(term)
         for key,value in sorted(finaldict.items()):
              Filewrite.write(key+" -----------> "+ value + "\n")  
+             Filewrite1.write(key+" -----------> "+ value + "\n") 
         print("Finished merging block: ",BLOCKFILE.split(".txt",1)[0]," and writing to disk")
         endmerge = time.process_time()
         eachmerge = endmerge -startmerge
         print("\n Time taken after each Block merge : ",eachmerge, "\n")
         Fileread.close()
         Filewrite.close()
+        Filewrite1.close()
+        indexwriter1.close()
         current, peak = tracemalloc.get_traced_memory()
         print(f" After merge : Current memory usage is {current / 10**6}MB")
         tracemalloc.stop()
+
+
+
+def compression():
+        indexReader = open('Merge/invert_index.txt') #to be moved
+        compression_word_list = open('Merge/index_cp_1.txt')
+        compression_word= compression_word_list.read()
+        inverted_index_file= indexReader.read()
+        if(inverted_index_file.strip()):
+             indexwriter_changed = open('Merge/invert_index.txt',"w+")
+             lst_elements = inverted_index_file.strip().split('\n')
+             print('Beforee ===========>')
+             #print('lst:::',lst_elements)
+             for i in range(len(lst_elements)):
+                 _each_val = lst_elements[i].split(' -----------> ')
+                 _index_places = compression_word.find(_each_val[0].capitalize())
+                 _each_val[0] = _each_val[0].replace(_each_val[0], str(_index_places))
+                 lst_elements[i] = _each_val[0] +" -----------> "+_each_val[1]
+                
+            
+             for i in range(len(sorted(lst_elements))):
+                 indexwriter_changed.write(lst_elements[i])
+                 indexwriter_changed.write ("\n")  
+                
+        print ("Full dictionary compiled!!!!!!.")
+        indexReader.close()
+        compression_word_list.close()
+        indexwriter_changed.close()
+
+
+
+
+
+
+
 
 
 
